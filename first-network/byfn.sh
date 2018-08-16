@@ -42,7 +42,7 @@ function printHelp() {
   echo "      - 'restart' - restart the network"
   echo "      - 'generate' - generate required certificates and genesis block"
   echo "      - 'upgrade'  - upgrade the network from version 1.1.x to 1.2.x"
-  echo "    -c <channel name> - channel name to use (defaults to \"mychannel\")"
+  echo "    -c <channel name> - channel name to use (defaults to \"chpatinets\")"
   echo "    -t <timeout> - CLI timeout duration in seconds (defaults to 10)"
   echo "    -d <delay> - delay duration in seconds (defaults to 3)"
   echo "    -f <docker-compose-file> - specify which docker-compose file use (defaults to docker-compose-cli.yaml)"
@@ -55,12 +55,12 @@ function printHelp() {
   echo "Typically, one would first generate the required certificates and "
   echo "genesis block, then bring up the network. e.g.:"
   echo
-  echo "	byfn.sh generate -c mychannel"
-  echo "	byfn.sh up -c mychannel -s couchdb"
-  echo "        byfn.sh up -c mychannel -s couchdb -i 1.2.x"
+  echo "	byfn.sh generate -c chpatinets"
+  echo "	byfn.sh up -c chpatinets -s couchdb"
+  echo "        byfn.sh up -c chpatinets -s couchdb -i 1.2.x"
   echo "	byfn.sh up -l node"
-  echo "	byfn.sh down -c mychannel"
-  echo "        byfn.sh upgrade -c mychannel"
+  echo "	byfn.sh down -c chpatinets"
+  echo "        byfn.sh upgrade -c chpatinets"
   echo
   echo "Taking all defaults:"
   echo "	byfn.sh generate"
@@ -88,8 +88,8 @@ function askProceed() {
 
 # Obtain CONTAINER_IDS and remove them
 # TODO Might want to make this optional - could clear other containers
-function clearContainers() {
-  CONTAINER_IDS=$(docker ps -a | awk '($2 ~ /dev-peer.*.mycc.*/) {print $1}')
+function clearContainers() { 
+  CONTAINER_IDS=$(docker ps -a | awk '($2 ~ /dev-peer.*.patientssys.*/) {print $1}') 
   if [ -z "$CONTAINER_IDS" -o "$CONTAINER_IDS" == " " ]; then
     echo "---- No containers available for deletion ----"
   else
@@ -100,8 +100,8 @@ function clearContainers() {
 # Delete any images that were generated as a part of this setup
 # specifically the following images are often left behind:
 # TODO list generated image naming patterns
-function removeUnwantedImages() {
-  DOCKER_IMAGE_IDS=$(docker images | awk '($1 ~ /dev-peer.*.mycc.*/) {print $3}')
+function removeUnwantedImages() { 
+  DOCKER_IMAGE_IDS=$(docker images | awk '($1 ~ /dev-peer.*.patientssys.*/) {print $3}')  
   if [ -z "$DOCKER_IMAGE_IDS" -o "$DOCKER_IMAGE_IDS" == " " ]; then
     echo "---- No images available for deletion ----"
   else
@@ -241,7 +241,7 @@ function networkDown() {
     # Bring down the network, deleting the volumes
     #Delete any ledger backups
     docker run -v $PWD:/tmp/first-network --rm hyperledger/fabric-tools:$IMAGETAG rm -Rf /tmp/first-network/ledgers-backup
-    #Cleanup the chaincode containers
+    #Cleanup the chaincode containers 
     clearContainers
     #Cleanup images
     removeUnwantedImages
@@ -436,8 +436,10 @@ OS_ARCH=$(echo "$(uname -s | tr '[:upper:]' '[:lower:]' | sed 's/mingw64_nt.*/wi
 CLI_TIMEOUT=10
 # default for delay between commands
 CLI_DELAY=3
-# channel name defaults to "mychannel"
-CHANNEL_NAME="mychannel"
+# channel name defaults to "chpatinets"
+CHANNEL_NAME="chpatinets"
+# CHAINCODE NAME defaults to "patientssys"
+CHAINCODE_NAME="patientssys"
 # use this as the default docker-compose yaml definition
 COMPOSE_FILE=docker-compose-cli.yaml
 #

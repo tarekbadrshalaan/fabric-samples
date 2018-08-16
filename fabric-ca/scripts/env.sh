@@ -45,7 +45,7 @@ GENESIS_BLOCK_FILE=/$DATA/genesis.block
 CHANNEL_TX_FILE=/$DATA/channel.tx
 
 # Name of test channel
-CHANNEL_NAME=mychannel
+CHANNEL_NAME=chpatinets
 
 # Query timeout in seconds
 QUERY_TIMEOUT=15
