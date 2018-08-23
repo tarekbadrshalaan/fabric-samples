@@ -1,0 +1,247 @@
+name: "Network"
+version: "1.0"
+
+
+#
+# The client section used by GO SDK.
+#
+client:
+
+  # Which organization does this application instance belong to? The value must be the name of an org
+  # defined under "organizations"
+  organization: org1
+
+  logging:
+    level: info
+
+  # Root of the MSP directories with keys and certs.
+  cryptoconfig:
+    #path: ${GOPATH}/src/github.com/chainHero/heroes-service/fixtures/crypto-config
+    path: /home/tarek/Software/TryLearn/Hyperledger/Fabric/fabric-samples-edit/first-network/crypto-config
+
+  # Some SDKs support pluggable KV stores, the properties under "credentialStore"
+  # are implementation specific
+  credentialStore:
+    path: /tmp/heroes-service-store
+
+    # [Optional]. Specific to the CryptoSuite implementation used by GO SDK. Software-based implementations
+    # requiring a key store. PKCS#11 based implementations does not.
+    cryptoStore:
+      path: /tmp/heroes-service-msp
+
+   # BCCSP config for the client. Used by GO SDK.
+  BCCSP:
+    security:
+     enabled: true
+     default:
+      provider: "SW"
+     hashAlgorithm: "SHA2"
+     softVerify: true
+     level: 256
+
+  tlsCerts:
+    # [Optional]. Use system certificate pool when connecting to peers, orderers (for negotiating TLS) Default: false
+    systemCertPool: false
+
+    # [Optional]. Client key and cert for TLS handshake with peers and orderers
+    client:
+      keyfile:
+      certfile:
+
+
+# channels:
+#   mychannel:
+#     orderers:
+#       - orderer.example.com
+#     peers:
+#       peer0.org1.example.com:
+#         endorsingPeer: true
+#         chaincodeQuery: true
+#         ledgerQuery: true
+#         eventSource: true
+#       peer0.org2.example.com:
+#         endorsingPeer: true
+#         chaincodeQuery: false
+#         ledgerQuery: true
+#         eventSource: false
+
+channels: 
+  chpatinets: 
+    peers: 
+      peer0.org1.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+ 
+        eventSource: true
+
+      peer1.org1.example.com: 
+
+    policies:
+      queryChannelConfig:
+        minResponses: 1
+        maxTargets: 1
+        retryOpts:
+          attempts: 5
+          initialBackoff: 500ms
+          maxBackoff: 5s 
+          backoffFactor: 2.0
+
+
+
+
+organizations:
+  Org1:
+    mspid: Org1MSP
+    peers:
+      - peer0.org1.example.com
+      - peer1.org1.example.com
+    certificateAuthorities:
+      - ca-org1
+    CryptoPath :  /home/tarek/Software/TryLearn/Hyperledger/Fabric/fabric-samples-edit/first-network/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+    # adminPrivateKey:
+    #   path: /home/tarek/Software/TryLearn/Hyperledger/Fabric/fabric-samples-edit/first-network/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/165ab87a06c0c7850689c6e84373f8f47503d91aa0c533132c57081f62885d27_sk
+    # signedCert:
+    #   path: /home/tarek/Software/TryLearn/Hyperledger/Fabric/fabric-samples-edit/first-network/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem
+
+  Org2:
+    mspid: Org2MSP
+    peers:
+      - peer0.org2.example.com
+    certificateAuthorities:
+      - ca-org2
+    CryptoPath :  /home/tarek/Software/TryLearn/Hyperledger/Fabric/fabric-samples-edit/first-network/crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
+    # adminPrivateKey:
+    #   path: /home/tarek/Software/TryLearn/Hyperledger/Fabric/fabric-samples-edit/first-network/crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore/28c863d1c63dcef5c00c6dde0249eb9476ff75e68537058e1f2c9387ca66202b_sk
+    # signedCert:
+    #   path: /home/tarek/Software/TryLearn/Hyperledger/Fabric/fabric-samples-edit/first-network/crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/signcerts/Admin@org2.example.com-cert.pem
+
+orderers:
+  orderer.example.com:
+    url: grpcs://localhost:7050
+    grpcOptions:
+      ssl-target-name-override: orderer.example.com
+      grpc-max-send-message-length: 15
+    tlsCACerts:
+      path: /home/tarek/Software/TryLearn/Hyperledger/Fabric/fabric-samples-edit/first-network/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+
+peers:
+  peer0.org1.example.com:
+    url: grpcs://localhost:7051
+    grpcOptions:
+      ssl-target-name-override: peer0.org1.example.com
+      grpc.keepalive_time_ms: 600000
+    tlsCACerts:
+      path: /home/tarek/Software/TryLearn/Hyperledger/Fabric/fabric-samples-edit/first-network/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp/tlscacerts/tlsca.org1.example.com-cert.pem
+
+  peer1.org1.example.com:
+    url: grpcs://localhost:7151
+    grpcOptions:
+      ssl-target-name-override: peer1.org1.example.com 
+    tlsCACerts:
+      path: /home/tarek/Software/TryLearn/Hyperledger/Fabric/fabric-samples-edit/first-network/crypto-config/peerOrganizations/org1.example.com/peers/peer1.org1.example.com/msp/tlscacerts/tlsca.org1.example.com-cert.pem
+
+  peer0.org2.example.com:
+    url: grpcs://localhost:8051
+    grpcOptions:
+      ssl-target-name-override: peer0.org2.example.com
+    tlsCACerts:
+      path: /home/tarek/Software/TryLearn/Hyperledger/Fabric/fabric-samples-edit/first-network/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp/tlscacerts/tlsca.org2.example.com-cert.pem
+
+# certificateAuthorities:
+#   ca-org1:
+#     url: https://localhost:7054
+#     httpOptions:
+#       verify: false
+#     tlsCACerts:
+#       path: /home/tarek/Software/TryLearn/Hyperledger/Fabric/fabric-samples-edit/first-network/crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem
+#     registrar:
+#       - enrollId: admin
+#         enrollSecret: adminpw
+#     caName: caorg1
+
+#   ca-org2:
+#     url: https://localhost:8054
+#     httpOptions:
+#       verify: false
+#     tlsCACerts:
+#       path: /home/tarek/Software/TryLearn/Hyperledger/Fabric/fabric-samples-edit/first-network/crypto-config/peerOrganizations/org2.example.com/ca/ca.org2.example.com-cert.pem
+#     registrar:
+#       - enrollId: admin
+#         enrollSecret: adminpw
+#     caName: caorg2
+
+
+
+entityMatchers:
+  peer:
+
+    ## TODO added below peer to ignore list, to avoid these revoked peer to conflict with bootstrap test
+    - pattern: peer1.org2.example.com:(\d+)
+      ignoreEndpoint: true
+
+    - pattern: peer1.org2.example.com
+      ignoreEndpoint: true
+
+    - pattern: (\w+):9051
+      ignoreEndpoint: true
+
+    - pattern: peer0.org1.example.(\w+)
+      urlSubstitutionExp: localhost:7051
+      sslTargetOverrideUrlSubstitutionExp: peer0.org1.example.com
+      mappedHost: peer0.org1.example.com
+
+    - pattern: peer1.org1.example.(\w+)
+      urlSubstitutionExp: localhost:7151
+      sslTargetOverrideUrlSubstitutionExp: peer1.org1.example.com
+      mappedHost: peer1.org1.example.com
+
+    - pattern: peer0.org2.example.(\w+)
+      urlSubstitutionExp: localhost:8051
+      sslTargetOverrideUrlSubstitutionExp: peer0.org2.example.com
+      mappedHost: peer0.org2.example.com
+
+    - pattern: (\w+).org1.example.(\w+):(\d+)
+      urlSubstitutionExp: localhost:$2
+      sslTargetOverrideUrlSubstitutionExp: $1.org1.example.com
+      mappedHost: $1.org1.example.com
+
+    - pattern: (\w+):7051
+      urlSubstitutionExp: localhost:7051
+      sslTargetOverrideUrlSubstitutionExp: peer0.org1.example.com
+      mappedHost: peer0.org1.example.com
+
+    - pattern: (\w+):7151
+      urlSubstitutionExp: localhost:7151
+      sslTargetOverrideUrlSubstitutionExp: peer1.org1.example.com
+      mappedHost: peer1.org1.example.com
+
+    - pattern: (\w+):8051
+      urlSubstitutionExp: localhost:8051
+      sslTargetOverrideUrlSubstitutionExp: peer0.org2.example.com
+      mappedHost: peer0.org2.example.com
+
+
+  orderer:
+
+    - pattern: (\w+).example.(\w+)
+      urlSubstitutionExp: localhost:7050
+      sslTargetOverrideUrlSubstitutionExp: orderer.example.com
+      mappedHost: orderer.example.com
+
+    - pattern: (\w+).example.(\w+):(\d+)
+      urlSubstitutionExp: localhost:7050
+      sslTargetOverrideUrlSubstitutionExp: orderer.example.com
+      mappedHost: orderer.example.com
+
+  certificateAuthority:
+    - pattern: (\w+).org1.example.(\w+)
+      urlSubstitutionExp: https://localhost:7054
+      sslTargetOverrideUrlSubstitutionExp: ca.org1.example.com
+      mappedHost: ca.org1.example.com 
+
+    - pattern: (\w+).org2.example.(\w+)
+      urlSubstitutionExp: https://localhost:8054
+      sslTargetOverrideUrlSubstitutionExp: ca.org2.example.com
+      mappedHost: ca.org2.example.com 
+

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -261,6 +262,84 @@ func (t *PatientsChaincode) getPatientbyID(stub shim.ChaincodeStubInterface, arg
 }
 
 // ============================================================
+// getPatientHistory - get Patient full History by Id
+// ============================================================
+func (t *PatientsChaincode) getPatientHistorybyID(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	//	0
+	//	"ID"
+	//	1
+
+	if len(args) != 1 {
+		return shim.Error("Incorrect number of arguments. Expecting 1")
+	}
+
+	// ==== Input sanitation ====
+	fmt.Println("- start get Patient")
+	if len(args[0]) <= 0 {
+		return shim.Error("ID: 1st argument must be a non-empty string")
+	}
+
+	patientID, err := strconv.ParseInt(args[0], 10, 64)
+	if err != nil {
+		return shim.Error("ID: 1st argument must be a numeric 64bit of string")
+	}
+	patientIDstr := fmt.Sprintf("Patient-%d", patientID)
+
+	pateintHistoryIer, err := stub.GetHistoryForKey(patientIDstr)
+	if err != nil {
+		return shim.Error("Failed to get patient:" + err.Error())
+	} else if pateintHistoryIer == nil {
+		return shim.Error("patient does not exist")
+	}
+	defer pateintHistoryIer.Close()
+
+	// buffer is a JSON array containing historic values for the marble
+	var buffer bytes.Buffer
+	buffer.WriteString("[")
+	bArrayMemberAlreadyWritten := false
+	for pateintHistoryIer.HasNext() {
+		response, err := pateintHistoryIer.Next()
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		// Add a comma before array members, suppress it for the first array member
+		if bArrayMemberAlreadyWritten == true {
+			buffer.WriteString(",")
+		}
+		buffer.WriteString("{\"TxId\":")
+		buffer.WriteString("\"")
+		buffer.WriteString(response.TxId)
+		buffer.WriteString("\"")
+
+		buffer.WriteString(", \"Value\":")
+		// if it was a delete operation on given key, then we need to set the
+		//corresponding value null. Else, we will write the response.Value
+		//as-is (as the Value itself a JSON marble)
+		if response.IsDelete {
+			buffer.WriteString("null")
+		} else {
+			buffer.WriteString(string(response.Value))
+		}
+
+		buffer.WriteString(", \"Timestamp\":")
+		buffer.WriteString("\"")
+		buffer.WriteString(time.Unix(response.Timestamp.Seconds, int64(response.Timestamp.Nanos)).String())
+		buffer.WriteString("\"")
+
+		buffer.WriteString(", \"IsDelete\":")
+		buffer.WriteString("\"")
+		buffer.WriteString(strconv.FormatBool(response.IsDelete))
+		buffer.WriteString("\"")
+
+		buffer.WriteString("}")
+		bArrayMemberAlreadyWritten = true
+	}
+	buffer.WriteString("]")
+
+	return shim.Success(buffer.Bytes())
+}
+
+// ============================================================
 // createDisease - create a new disease
 // ============================================================
 func (t *PatientsChaincode) createDisease(stub shim.ChaincodeStubInterface, args []string) pb.Response {
@@ -471,6 +550,9 @@ func (t *PatientsChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response
 	} else if function == "getPatientbyID" {
 		//get Patient full object by Id
 		return t.getPatientbyID(stub, args)
+	} else if function == "getPatientHistorybyID" {
+		//get Patient full history by id
+		return t.getPatientHistorybyID(stub, args)
 	} else if function == "createDisease" {
 		//Create New Disease
 		return t.createDisease(stub, args)
@@ -493,13 +575,17 @@ func main() {
 }
 
 /*
+rm -rf /tmp/heroes-service-* heroes-service
 ./byfn.sh up
 docker exec -it cli bash
-peer chaincode install -n patientssys -v 1.0 -l golang -p github.com/chaincode/medical/go
 
-CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp CORE_PEER_ADDRESS=peer0.org2.example.com:7051 CORE_PEER_LOCALMSPID="Org2MSP" CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt peer chaincode install -n patientssys -v 1.0 -p github.com/chaincode/medical/go
+/*
+	CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp CORE_PEER_ADDRESS=peer0.org2.example.com:7051 CORE_PEER_LOCALMSPID="Org2MSP" CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt peer chaincode install -n patientssys -v 1.0 -p github.com/chaincode/medical/go
 
-peer chaincode instantiate -o orderer.example.com:7050 --tls true --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C chpatinets -n patientssys -l golang -v 1.0 -c '{"Args":["init"]}' -P 'AND ('\''Org1MSP.peer'\'','\''Org2MSP.peer'\'')'
+	peer chaincode instantiate -o orderer.example.com:7050 --tls true --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C chpatinets -n patientssys -l golang -v 1.0 -c '{"Args":["init"]}' -P 'AND ('\''Org1MSP.peer'\'','\''Org2MSP.peer'\'')'
+*/
+/*
+
 
 peer chaincode query -C chpatinets -n patientssys -c '{"Args":["getPatientbyID","1"]}'
 
@@ -522,5 +608,9 @@ peer chaincode query -C chpatinets -n patientssys -c '{"Args":["getDiseasebyID",
 //assignDiseaseToPatient
 peer chaincode invoke -o orderer.example.com:7050 --tls true --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C chpatinets -n patientssys --peerAddresses peer0.org1.example.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt --peerAddresses peer0.org2.example.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt -c '{"Args":["assignDiseaseToPatient","1","1"]}'
 peer chaincode query -C chpatinets -n patientssys -c '{"Args":["getPatientbyID","1"]}'
+
+
+//getPatientHistory
+peer chaincode query -C chpatinets -n patientssys -c '{"Args":["getPatientHistorybyID","1"]}'
 
 */
